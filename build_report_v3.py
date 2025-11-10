@@ -14,11 +14,11 @@ import pandas as pd
 COL_ALIAS = {
     # 订单编号
     "order id":                       "order id",
-    "注文ID":                          "order id",
+    "注文id":                          "order id",
 
     # 订单明细编号
     "order item id":                  "order item id",
-    "注文商品ID":                       "order item id",
+    "注文商品id":                       "order item id",
 
     # 商品名
     "product name by customer order": "product name by customer order",
@@ -26,7 +26,7 @@ COL_ALIAS = {
 
     # SKU
     "contribution sku":               "contribution sku",
-    "貢献SKU":                         "contribution sku",
+    "貢献sku":                         "contribution sku",
 
     # 数量
     "quantity to ship":               "quantity to ship",
