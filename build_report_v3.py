@@ -10,6 +10,33 @@ build_report_v5.py  (Case‑Insensitive header fix)
 import sys, os
 import pandas as pd
 
+# --- 日英混合ヘッダー対応 --------------------------------------------------
+COL_ALIAS = {
+    # 订单编号
+    "order id":                       "order id",
+    "注文ID":                          "order id",
+
+    # 订单明细编号
+    "order item id":                  "order item id",
+    "注文商品ID":                       "order item id",
+
+    # 商品名
+    "product name by customer order": "product name by customer order",
+    "顧客注文による製品名":                "product name by customer order",
+
+    # SKU
+    "contribution sku":               "contribution sku",
+    "貢献SKU":                         "contribution sku",
+
+    # 数量
+    "quantity to ship":               "quantity to ship",
+    "出荷数量":                         "quantity to ship",
+
+    # 收件人
+    "recipient name":                 "recipient name",
+    "受取人名":                         "recipient name",
+}
+
 REQ_LOWER = [
     "order id",
     "order item id",
@@ -30,30 +57,43 @@ HEAD_MAP = {
 
 
 def read_table(path: str) -> pd.DataFrame:
-    # すべて文字列で読み込み
-    if path.lower().endswith((".xlsx",".xlsm",".xls")):
+    # ❶ 读文件（全部按字符串）
+    if path.lower().endswith((".xlsx", ".xlsm", ".xls")):
         df = pd.read_excel(path, dtype=str, engine="openpyxl")
     else:
         df = pd.read_csv(path, dtype=str, keep_default_na=False)
 
-    # ヘッダー正規化用マップ: lower_name -> original_name
+    # ★★★ ❷ 第一次列名统一：日文 → 英文长名（小写） ★★★
+    df.rename(
+        columns=lambda c: COL_ALIAS.get(c.strip().lower(), c.strip().lower()),
+        inplace=True
+    )
+
+    # ❸ 用 lower -> original 映射表做必需列检查
     col_map = {c.strip().lower(): c for c in df.columns}
 
-    # 必須列チェック
     miss = [h for h in REQ_LOWER if h not in col_map]
     if miss:
-        raise SystemExit(f"Missing header(s): {miss}\nFound: {list(df.columns)}")
+        raise SystemExit(f"Missing header(s): {miss}\\nFound: {list(df.columns)}")
 
-    # 列リネーム (大小文字関係なく統一名へ)
+    # ❹ 第二次列名统一：英文长名 → 内部短名
     rename_dict = {col_map[k]: HEAD_MAP[k] for k in REQ_LOWER}
     df = df.rename(columns=rename_dict)
 
-    # qty を数値化 (quantity to ship)
-    q = df["qty"].fillna("").astype(str).str.strip().str.replace(",","",regex=False)
+    # ❺ qty → int
+    q = (
+        df["qty"]
+        .fillna("")
+        .astype(str)
+        .str.strip()
+        .str.replace(",", "", regex=False)
+    )
     df["qty"] = pd.to_numeric(q, errors="coerce").fillna(0).astype(int)
 
-    for c in ["order_id","order_item_id","jan","recipient","product"]:
+    # ❻ 其余列转 str
+    for c in ["order_id", "order_item_id", "jan", "recipient", "product"]:
         df[c] = df[c].fillna("").astype(str)
+
     return df
 
 # ---- build_detail, jan_totals, write_excel, main は変更なし ↓ ----
