@@ -17,8 +17,42 @@ Usage:
 import sys, re
 import pandas as pd
 
+COL_ALIAS = {
+    "注文id":            "order id",
+    "order id":         "order id",
+
+    "注文商品id":         "order item id",
+    "order item id":    "order item id",
+
+    "受取人名":           "recipient name",
+    "recipient name":   "recipient name",
+
+    "貢献sku":           "contribution sku",
+    "contribution sku": "contribution sku",
+
+    "顧客注文による製品名": "product name by customer order",
+    "product name by customer order": "product name by customer order",
+
+    "出荷数量":           "quantity to ship",
+    "quantity to ship": "quantity to ship",
+
+    "受信者の電話番号": "recipient phone number",
+    "地区": "district",
+    "発送先住所1": "ship address 1",
+    
+}
+
+
 def read_csv_all_text(path):
-    return pd.read_csv(path, dtype=str, keep_default_na=False)
+    df = pd.read_csv(path, dtype=str, keep_default_na=False)
+
+    #日文・英語ヘッダー統一
+    df.rename(
+        columns=lambda c: COL_ALIAS.get(c.strip().lower(), c.strip().lower()),
+        inplace=True
+    )
+
+    return df
 
 def extract_order_sequence(report_xlsx):
     df = pd.read_excel(report_xlsx, sheet_name="整理結果", dtype=str, engine="openpyxl")
